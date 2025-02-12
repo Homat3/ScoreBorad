@@ -234,7 +234,7 @@ void CurrentState::resetTeamScore(char which) {
 void CurrentState::init() {
   reset();
   serTemperature = 30;
-  serHumidity = 99;
+  serHumidity =99;
   norTemperature = 25;
   norHumidity = 95;
   temperatureLine = 20;
@@ -293,13 +293,18 @@ void ScoreBorad::refreshScreen() {
   }
 }
 void ScoreBorad::refreshCondition() {
+  static int times = 0;
+  times = (times + 1) % 30;
+  if (times) return;              //降低屏幕刷新频率
   dht.updateData();
+  
   if (ledMode){
     if (CurrentState::serious) {
       if (dht.temperature < data.getNorTemperature() && dht.humidity < data.getNorHumidity()){//解除危机
         CurrentState::serious = false;
         MsTimer2::stop();
         doubleLed.shutDown();
+        beep.stopTone();
       }
     }
     else {
@@ -311,11 +316,11 @@ void ScoreBorad::refreshCondition() {
   }
   else {
     if (dht.temperature > data.getTemperatureLine()) {
-      doubleLed.lightRed();
+      doubleLed.lightGreen();
       fan.roll(250);
     }
     else {
-      doubleLed.lightGreen();
+      doubleLed.lightRed();
       fan.roll(100);
     }
   }
@@ -324,6 +329,9 @@ void ScoreBorad::detectScore(){
   static int times = 0;
   times = (times + 1) % 15;
   if (times) return;
+
+  Serial.println(dht.temperature);
+  Serial.println(dht.humidity);
 
   if (isInContest) {//正在比赛
     int distance = sonar.getDistanceCM();//获取距离
